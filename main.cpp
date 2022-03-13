@@ -16,6 +16,9 @@
 #include <format>
 #endif
 
+#define C4CORE_SINGLE_HDR_DEFINE_NOW
+#include "c4core.hpp"
+
 
 #define STB_SPRINTF_IMPLEMENTATION
 #include "stb_sprintf.h"
@@ -23,7 +26,7 @@
 using namespace std;
 
 static int g_Global;
-static const int kMaxThreads = 8;
+static const int kMaxThreads = 10;
 static const int kIterations = 2000000;
 static const size_t kExpect = 114888893;
 
@@ -157,6 +160,54 @@ static void do_to_chars(int index)
 	}
 }
 
+static void do_c4_write_dec(int index)
+{
+	size_t sum = 0;
+	char buf_[100];
+    c4::substr buf = buf_;
+	for (int i = 0; i < kIterations; ++i) {
+		size_t len = c4::write_dec(buf, i + g_Global);
+		sum += len + buf[0];
+	}
+	if (sum != kExpect)
+    {
+		printf("    sum was supposed to be %zi, but got %zi in thread %i of c4::write_dec!\n", kExpect, sum, index);
+		exit(1);
+	}
+}
+
+static void do_c4_itoa(int index)
+{
+	size_t sum = 0;
+	char buf_[100];
+    c4::substr buf = buf_;
+	for (int i = 0; i < kIterations; ++i) {
+		size_t len = c4::itoa(buf, i + g_Global);
+		sum += len + buf[0];
+	}
+	if (sum != kExpect)
+    {
+		printf("    sum was supposed to be %zi, but got %zi in thread %i of c4::itoa!\n", kExpect, sum, index);
+		exit(1);
+	}
+}
+
+static void do_c4_to_chars(int index)
+{
+	size_t sum = 0;
+	char buf_[100];
+    c4::substr buf = buf_;
+	for (int i = 0; i < kIterations; ++i) {
+		size_t len = c4::to_chars(buf, i + g_Global);
+		sum += len + buf[0];
+	}
+	if (sum != kExpect)
+    {
+		printf("    sum was supposed to be %zi, but got %zi in thread %i of c4::to_chars!\n", kExpect, sum, index);
+		exit(1);
+	}
+}
+
 typedef void (*thread_func)(int index);
 
 static void do_test_with_func(const char* name, thread_func func)
@@ -200,5 +251,8 @@ int main(int argc, const char**)
 	do_test_with_func("itoa", do_itoa);
 #endif
 	do_test_with_func("to_chars", do_to_chars);
+	do_test_with_func("c4_write_dec", do_c4_write_dec);
+	do_test_with_func("c4_itoa", do_c4_itoa);
+	do_test_with_func("c4_to_chars", do_c4_to_chars);
 	return 0;
 }
